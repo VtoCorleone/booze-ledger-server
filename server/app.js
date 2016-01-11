@@ -10,6 +10,7 @@ mongoose.Promise = require('bluebird');
 import config from './config/environment';
 import http from 'http';
 import cors from 'cors';
+import { express_logger, express_logger_error } from './logger';
 
 // Connect to MongoDB
 mongoose.connect(config.mongo.uri, config.mongo.options);
@@ -33,7 +34,9 @@ var socketio = require('socket.io')(server, {
 });
 require('./config/socketio')(socketio);
 require('./config/express')(app);
+app.use(express_logger);
 require('./routes')(app);
+app.use(express_logger_error);
 
 // Start server
 function startServer () {

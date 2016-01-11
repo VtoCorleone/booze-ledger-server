@@ -20,5 +20,44 @@ module.exports = {
           process.env.OPENSHIFT_MONGODB_DB_URL +
           process.env.OPENSHIFT_APP_NAME ||
           'mongodb://localhost/booze-ledger'
+  },
+
+  // Set logging levels
+  logger: {
+    streams: function (path) {
+      return {
+        'bunyan_express': [
+          {
+            level: 'warn',
+            stream: process.stdout
+          },
+          {
+            level: 'info',
+            path: path + '/logs/logs.log'
+          }
+        ],
+        'bunyan_express_error': [
+          {
+            level: 'warn',
+            stream: process.stdout
+          },
+          {
+            level: 'warn',
+            path: path + '/logs/express_error_logs.log'
+          }
+        ],
+        'fusion': [
+          {
+            level: 'warn',
+            stream: process.stdout
+          },
+          {
+            level: 'info',
+            path: path + '/logs/logs.log'
+          }
+        ]
+      }
+    },
+    excludes: ['response-hrtime', 'req-headers', 'res-headers']
   }
 };

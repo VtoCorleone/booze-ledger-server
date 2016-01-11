@@ -16,5 +16,17 @@ module.exports = {
         timestamps: false
       }
     }
+  },
+  
+  // Set logging levels
+  logger: {
+    streams: function () {
+      return {
+        'bunyan_express': [],
+        'bunyan_express_error': [],
+        'fusion': []
+      }
+    },
+    excludes: ['response-hrtime', 'req-headers', 'res-headers']
   }
 };
