@@ -7,10 +7,10 @@
 import express from 'express';
 import mongoose from 'mongoose';
 mongoose.Promise = require('bluebird');
-import config from './config/environment';
+import config from '../config/environment';
 import http from 'http';
 import cors from 'cors';
-import { express_logger, express_logger_error } from './logger';
+import { expressLogger, expressLoggerError } from '../logger';
 
 // Connect to MongoDB
 mongoose.connect(config.mongo.uri, config.mongo.options);
@@ -21,25 +21,25 @@ mongoose.connection.on('error', function (err) {
 
 // Populate databases with sample data
 if (config.seedDB) {
-  require('./config/seed');
+  require('../config/seed');
 }
 
 // Setup server
-var app = express();
+let app = express();
 app.use(cors());
-var server = http.createServer(app);
-var socketio = require('socket.io')(server, {
+let server = http.createServer(app);
+let socketio = require('socket.io')(server, {
   serveClient: config.env !== 'production',
-  path: '/socket.io-client'
+  path: '/socket.io-client',
 });
-require('./config/socketio')(socketio);
-require('./config/express')(app);
-app.use(express_logger);
+require('../config/socketio')(socketio);
+require('../config/express')(app);
+app.use(expressLogger);
 require('./routes')(app);
-app.use(express_logger_error);
+app.use(expressLoggerError);
 
 // Start server
-function startServer () {
+function startServer() {
   server.listen(config.port, config.ip, function () {
     console.log('Express server listening on %d, in %s mode', config.port, app.get('env'));
   });

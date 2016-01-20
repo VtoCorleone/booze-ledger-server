@@ -1,34 +1,31 @@
 // Generated on 2016-01-05 using generator-angular-fullstack 3.1.1
 'use strict';
 
-var _ = require('lodash');
-var gulp = require('gulp');
-var path = require('path');
-var gulpLoadPlugins = require('gulp-load-plugins');
-var http = require('http');
-var lazypipe = require('lazypipe');
-var nodemon = require('nodemon');
-var runSequence = require('run-sequence');
+let _ = require('lodash');
+let gulp = require('gulp');
+let gulpLoadPlugins = require('gulp-load-plugins');
+let lazypipe = require('lazypipe');
+let nodemon = require('nodemon');
+let runSequence = require('run-sequence');
+let argv = require('yargs').argv;
+let jscs = require('gulp-jscs');
 
-var plugins = gulpLoadPlugins();
-var config;
+let plugins = gulpLoadPlugins();
+let config;
 
-gulp.task('default', function () {
-  console.log('gulping');
-});
-
-var paths = {
+let paths = {
   server: {
-    scripts: ['server/**/*.js'],
-    json: ['server/**/*.json'],
+    scripts: ['**/*.js', '!node_modules/**/*.js'],
+    json: ['**/*.json'],
     test: [
-      'server/**/*.spec.js',
-      'server/**/*.mock.js',
-      'server/**/*.integration.js'
-    ]
+      '**/*.spec.js',
+      '**/*.mock.js',
+      '**/*.integration.js',
+      '!node_modules/**/*.js',
+    ],
   },
   karma: 'karma.conf.js',
-  dist: 'dist'
+  dist: 'dist',
 };
 
 // /********************
@@ -38,24 +35,25 @@ var paths = {
 gulp.task('env:all', function () {
   let localConfig;
   try {
-    localConfig = require('./server/config/local.env');
+    localConfig = require('./config/local.env');
   } catch (e) {
     localConfig = {};
   }
+
   plugins.env({
-    vars: localConfig
+    vars: localConfig,
   });
 });
 
 gulp.task('env:test', function () {
   plugins.env({
-    vars: {NODE_ENV: 'test'}
+    vars: { NODE_ENV: 'test' },
   });
 });
 
 gulp.task('env:prod', function () {
   plugins.env({
-    vars: {NODE_ENV: 'production'}
+    vars: { NODE_ENV: 'production' },
   });
 });
 
@@ -63,7 +61,7 @@ gulp.task('env:prod', function () {
 //  * Helper functions
 //  ********************/
 
-function onServerLog (log) {
+function onServerLog(log) {
   console.log(plugins.util.colors.white('[') +
     plugins.util.colors.yellow('nodemon') +
     plugins.util.colors.white('] ') +
@@ -74,8 +72,8 @@ function onServerLog (log) {
 //  * Reusable pipelines
 //  ********************/
 
-var lintServerScripts = lazypipe()
-  .pipe(plugins.jshint, 'server/.jshintrc')
+let lintServerScripts = lazypipe()
+  .pipe(plugins.jshint, '.jshintrc')
   .pipe(plugins.jshint.reporter, 'jshint-stylish');
 
 // /********************
@@ -83,26 +81,27 @@ var lintServerScripts = lazypipe()
 //  ********************/
 
 gulp.task('env:all', function () {
-  var localConfig;
+  let localConfig;
   try {
-    localConfig = require('./server/config/local.env');
+    localConfig = require('./config/local.env');
   } catch (e) {
     localConfig = {};
   }
+
   plugins.env({
-    vars: localConfig
+    vars: localConfig,
   });
 });
 
 gulp.task('env:test', function () {
   plugins.env({
-    vars: {NODE_ENV: 'test'}
+    vars: { NODE_ENV: 'test' },
   });
 });
 
 gulp.task('env:prod', function () {
   plugins.env({
-    vars: {NODE_ENV: 'production'}
+    vars: { NODE_ENV: 'production' },
   });
 });
 
@@ -110,23 +109,38 @@ gulp.task('env:prod', function () {
 //  * Tasks
 //  ********************/
 
-gulp.task('lint:scripts', function () {
-  console.log('linting scripts');
+gulp.task('scripts:lint', function () {
   return gulp.src(_.union(paths.server.scripts, _.map(paths.server.test, function (blob) {
       return '!' + blob;
     })))
     .pipe(lintServerScripts());
 });
 
+gulp.task('scripts:jscs', function () {
+  return gulp.src(_.union(paths.server.scripts, _.map(paths.server.test, function (blob) {
+      return '!' + blob;
+    })))
+    .pipe(jscs({ config: './.jscsrc' }))
+    .pipe(jscs.reporter());
+});
+
+gulp.task('scripts', function (cb) {
+  runSequence(
+    'scripts:jscs',
+    'scripts:lint',
+    cb);
+});
+
 gulp.task('start:server', function () {
   process.env.NODE_ENV = process.env.NODE_ENV || 'development';
-  config = require('./server/config/environment');
-  nodemon('-w server server')
+  config = require('./config/environment');
+  const isDebug = argv.debug ? '--debug' : '';
+  nodemon('-w server ' + isDebug + ' server')
     .on('log', onServerLog);
 });
 
 gulp.task('watch', function () {
-  var testFiles = paths.server.test;
+  let testFiles = paths.server.test;
 
   plugins.livereload.listen();
 
@@ -138,7 +152,7 @@ gulp.task('watch', function () {
 
 gulp.task('serve', function (cb) {
   runSequence(
-    'lint:scripts',
+    'scripts',
     'start:server',
     'watch',
     cb);
@@ -149,8 +163,8 @@ gulp.task('mocha:unit', function () {
     .pipe(plugins.mocha({
       reporter: 'spec',
       require: [
-        './mocha.conf'
-      ]
+        './mocha.conf',
+      ],
     }))
     .once('end', function () {
       process.exit();
